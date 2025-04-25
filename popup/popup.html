@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site History Cleaner Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="w-[400px] h-[600px] bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+    <!-- Header with Subscription Status -->
+    <header class="bg-white dark:bg-gray-900 shadow-md p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-xl font-bold">Site History Cleaner</h1>
+                <span id="subscriptionBadge" class="text-xs px-2 py-1 rounded-full bg-gray-200 dark:bg-gray-700">
+                    Free Plan
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="toggleTheme" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+                <button id="upgradeBtn" class="px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full text-sm hover:opacity-90">
+                    Upgrade
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content with Tabs -->
+    <div class="border-b border-gray-200 dark:border-gray-700">
+        <nav class="flex space-x-4 px-4" aria-label="Tabs">
+            <button class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-gray-300 active" data-tab="basic">
+                Basic
+            </button>
+            <button class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-gray-300" data-tab="backup">
+                Backup & Restore
+            </button>
+            <button class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-gray-300" data-tab="tags">
+                Tags
+            </button>
+            <button class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-gray-300" data-tab="analytics">
+                Analytics
+            </button>
+            <button class="tab-btn px-3 py-2 text-sm font-medium border-b-2 border-transparent hover:border-gray-300" data-tab="premium">
+                Premium
+            </button>
+        </nav>
+    </div>
+
+    <main class="p-4 space-y-4 overflow-y-auto" style="height: calc(100% - 120px);">
+        <!-- Basic Tab -->
+        <div id="basicTab" class="tab-content">
+            <!-- Domain Input -->
+            <div class="space-y-2">
+                <label for="domain" class="block text-sm font-medium">Target Domain</label>
+                <div class="flex gap-2">
+                    <input type="text" id="domain" 
+                        placeholder="example.com" 
+                        class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                            bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button id="clearHistory" 
+                        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg 
+                            transition-colors duration-200 flex items-center gap-2">
+                        <i class="fas fa-trash"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                <h2 class="text-lg font-semibold mb-3">Statistics</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-3 bg-blue-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Total Visits</p>
+                        <p id="totalVisits" class="text-xl font-bold text-blue-600 dark:text-blue-400">0</p>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 dark:bg-gray-800 rounded-lg">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Last Visit</p>
+                        <p id="lastVisit" class="text-xl font-bold text-green-600 dark:text-green-400">Never</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent History -->
+            <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                <h2 class="text-lg font-semibold mb-3">Recent History</h2>
+                <div id="historyList" class="space-y-2 max-h-[200px] overflow-y-auto">
+                    <!-- History items will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Tab (Pro Feature) -->
+        <div id="backupTab" class="tab-content hidden">
+            <div class="space-y-4">
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-3">Backup History</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="backupName" 
+                                placeholder="Backup name" 
+                                class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                    bg-white dark:bg-gray-700">
+                            <button id="createBackup" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                Create
+                            </button>
+                        </div>
+                        <div id="backupsList" class="space-y-2">
+                            <!-- Backups will be listed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-3">Restore Points</h2>
+                    <div id="restorePoints" class="space-y-2">
+                        <!-- Restore points will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tags Tab (Pro Feature) -->
+        <div id="tagsTab" class="tab-content hidden">
+            <div class="space-y-4">
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-3">Manage Tags</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="newTag" 
+                                placeholder="New tag name" 
+                                class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                    bg-white dark:bg-gray-700">
+                            <button id="addTag" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                Add Tag
+                            </button>
+                        </div>
+                        <div id="tagsList" class="flex flex-wrap gap-2">
+                            <!-- Tags will be listed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-3">Tagged History</h2>
+                    <div id="taggedHistory" class="space-y-2">
+                        <!-- Tagged history items will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab (Pro Feature) -->
+        <div id="analyticsTab" class="tab-content hidden">
+            <div class="space-y-4">
+                <!-- Time Spent Chart -->
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Time Spent by Domain</h2>
+                        <div class="flex gap-2">
+                            <button id="exportPDF" class="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+                                Export PDF
+                            </button>
+                            <button id="exportCSV" class="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <canvas id="timeSpentChart" class="w-full h-64"></canvas>
+                </div>
+
+                <!-- Peak Hours Chart -->
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-4">Peak Browsing Hours</h2>
+                    <canvas id="peakHoursChart" class="w-full h-48"></canvas>
+                </div>
+
+                <!-- Category Distribution -->
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-4">Category Distribution</h2>
+                    <canvas id="categoryChart" class="w-full h-48"></canvas>
+                </div>
+
+                <!-- Summary Statistics -->
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-3">Summary Statistics</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 bg-blue-50 dark:bg-gray-800 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Most Visited Domain</p>
+                            <p id="mostVisitedDomain" class="text-lg font-bold text-blue-600 dark:text-blue-400">-</p>
+                        </div>
+                        <div class="p-3 bg-purple-50 dark:bg-gray-800 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Peak Activity Time</p>
+                            <p id="peakActivityTime" class="text-lg font-bold text-purple-600 dark:text-purple-400">-</p>
+                        </div>
+                        <div class="p-3 bg-green-50 dark:bg-gray-800 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Total Domains</p>
+                            <p id="totalDomains" class="text-lg font-bold text-green-600 dark:text-green-400">-</p>
+                        </div>
+                        <div class="p-3 bg-yellow-50 dark:bg-gray-800 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Total Browsing Time</p>
+                            <p id="totalBrowsingTime" class="text-lg font-bold text-yellow-600 dark:text-yellow-400">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Tab -->
+        <div id="premiumTab" class="tab-content hidden">
+            <div class="space-y-4">
+                <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+                    <h2 class="text-xl font-bold mb-2">Upgrade to Pro</h2>
+                    <p class="text-sm opacity-90 mb-4">Unlock premium features and take control of your browsing history</p>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-white bg-opacity-10 p-3 rounded-lg">
+                            <i class="fas fa-cloud-upload-alt mb-2"></i>
+                            <h3 class="font-semibold">Unlimited Backups</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-10 p-3 rounded-lg">
+                            <i class="fas fa-tags mb-2"></i>
+                            <h3 class="font-semibold">History Tagging</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-10 p-3 rounded-lg">
+                            <i class="fas fa-clock mb-2"></i>
+                            <h3 class="font-semibold">Advanced Scheduling</h3>
+                        </div>
+                        <div class="bg-white bg-opacity-10 p-3 rounded-lg">
+                            <i class="fas fa-chart-line mb-2"></i>
+                            <h3 class="font-semibold">Advanced Analytics</h3>
+                        </div>
+                    </div>
+                    <button id="subscribePro" class="w-full py-2 bg-white text-purple-600 rounded-lg font-semibold hover:bg-opacity-90">
+                        Subscribe Now - $4.99/month
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+                    <h2 class="text-lg font-semibold mb-3">Pro Features</h2>
+                    <ul class="space-y-2">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span>Unlimited history backups</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span>Custom tags and categories</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span>Advanced scheduling options</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span>Priority support</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-check text-green-500"></i>
+                            <span>Cross-device sync</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm">
+            <h2 class="text-lg font-semibold mb-3">Settings</h2>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="text-sm">Auto-clean enabled</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoClean" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer 
+                            dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:bg-blue-600
+                            after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                            after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="text-sm">Cleanup interval</label>
+                    <select id="cleanupInterval" 
+                        class="px-3 py-1 rounded border border-gray-300 dark:border-gray-600 
+                            bg-white dark:bg-gray-700">
+                        <option value="hourly">Hourly</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="popup.js"></script>
+</body>
+</html>
